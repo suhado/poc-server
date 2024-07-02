@@ -37,6 +37,7 @@ export class UsersService {
     const user = await this.findOne(id);
     user.name = updateUserDto.name;
     user.email = updateUserDto.email;
+    user.phone = updateUserDto.phone;
     user.updatedAt = new Date();
     return await this.userRepository.save(user);
   }
