@@ -1,28 +1,50 @@
-import { Injectable } from '@nestjs/common';
-import { CreateTodoListDto } from './dto/create-todo-list.dto';
-import { UpdateTodoListDto } from './dto/update-todo-list.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateTodoDto } from './dto/create-todo.dto';
+import { UpdateTodoDto } from './dto/update-todo.dto';
+import { Todo } from './entities/todo-list.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TodoListService {
-  create(createTodoListDto: CreateTodoListDto) {
-    console.log(createTodoListDto);
-    return 'This action adds a new todoList';
+  constructor(
+    @InjectRepository(Todo)
+    private readonly todoRepository: Repository<Todo>,
+  ) {}
+
+  async create(createTodoDto: CreateTodoDto) {
+    console.log(createTodoDto);
+    const newTodo = this.todoRepository.create({
+      ...createTodoDto,
+      createdAt: new Date(),
+    });
+    return await this.todoRepository.save(newTodo);
   }
 
-  findAll() {
-    return `This action returns all todoList`;
+  async findAll() {
+    return await this.todoRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} todoList`;
+  async findOne(id: number) {
+    const todo = await this.todoRepository.findOneBy({ id });
+    if (!todo) {
+      throw new NotFoundException(`Todo with Id ${id} is not found`);
+    }
+    return todo;
   }
 
-  update(id: number, updateTodoListDto: UpdateTodoListDto) {
-    console.log(updateTodoListDto);
-    return `This action updates a #${id} todoList`;
+  async update(id: number, updateTodoDto: UpdateTodoDto) {
+    const todo = await this.findOne(id);
+    todo.title = updateTodoDto.title;
+    todo.isDone = updateTodoDto.isDone;
+    todo.updatedAt = new Date();
+    return await this.todoRepository.save(todo);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} todoList`;
+  async remove(id: number) {
+    const todo = await this.findOne(id);
+    // softDelete
+    todo.deletedAt = new Date();
+    return await this.todoRepository.save(todo);
   }
 }
